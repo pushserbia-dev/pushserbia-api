@@ -16,26 +16,13 @@ async function bootstrap() {
       skipMissingProperties: true,
     }),
   );
-
-  // Resolve CORS origins from env when provided; fall back to defaults otherwise
-  const corsOriginsEnv = process.env.CORS_ORIGINS || '';
-  const resolvedOrigins = corsOriginsEnv
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((entry) => {
-      // Support regex entries using either re:/regex/ syntax or plain ^...$ pattern
-      if (/^re:/i.test(entry)) {
-        const pattern = entry.replace(/^re:/i, '');
-        return new RegExp(pattern);
-      }
-      if (entry.startsWith('^') || entry.endsWith('$')) {
-        return new RegExp(entry);
-      }
-      return entry;
-    });
   app.enableCors({
-    origin: resolvedOrigins,
+    origin: [
+      'http://localhost:4200',
+      'https://pushserbia.com',
+      'https://staging.pushserbia.com',
+      /^https:\/\/.*\.vercel\.app$/,
+    ],
     preflightContinue: false,
     credentials: true,
   });
@@ -45,5 +32,4 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-
 bootstrap();
