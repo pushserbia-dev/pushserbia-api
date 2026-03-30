@@ -1,27 +1,41 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { FirebaseAuthService } from '../services/firebase-auth.service';
+import { Request, Response } from 'express';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
+  private readonly logger = new Logger(AuthMiddleware.name);
   constructor(private readonly firebaseService: FirebaseAuthService) {}
 
-  async use(req: any, res: any, next: () => void) {
+  async use(req: Request, res: Response, next: () => void) {
     try {
-      const { authorization } = req.headers;
-      if (!authorization) {
-        return res.status(401).json({ message: 'invalid token' });
+      const { __auth } = req.cookies;
+      if (!__auth) {
+        return res
+          .status(HttpStatus.UNAUTHORIZED)
+          .json({ message: 'invalid token' });
       }
 
-      const user = await this.firebaseService.authenticate(authorization);
+      const user = await this.firebaseService.authenticate(__auth);
       if (!user.id && req.baseUrl !== '/v1/users/account') {
-        return res.status(409).json({ message: 'invalid id' });
+        return res.status(HttpStatus.BAD_REQUEST).json({ message: 'invalid id' });
       }
 
-      req.user = user;
+      if (!user.active) {
+        this.logger.warn(`Blocked user ${user.id} attempted ${req.method} ${req.baseUrl}${req.path}`);
+        return res
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: 'account is blocked' });
+      }
+
+      req['user'] = user;
 
       next();
-    } catch (err) {
-      return res.status(401).json({ message: 'invalid token' });
+    } catch (error) {
+      this.logger.warn(`Auth failed for ${req.method} ${req.baseUrl}${req.path}`);
+      return res
+        .status(HttpStatus.UNAUTHORIZED)
+        .json({ message: 'invalid token' });
     }
   }
 }

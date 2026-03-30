@@ -1,98 +1,261 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# PushSerbia API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+PushSerbia API is an open-source backend service that powers the PushSerbia platform, designed to connect developers and projects in Serbia.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 📋 Table of Contents
 
-## Description
+- [Features](#features)
+- [Technologies](#technologies)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Configuration](#environment-configuration)
+- [Usage](#usage)
+  - [Running the Application](#running-the-application)
+  - [API Endpoints](#api-endpoints)
+- [Testing](#testing)
+  - [Running Tests](#running-tests)
+  - [Creating New Tests](#creating-new-tests)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## ✨ Features
 
-## Project setup
+- User authentication via Firebase
+- LinkedIn OAuth integration
+- Project management
+- Voting system
+- Queue management with Redis
+- Email integration with Mailchimp
 
-```bash
-$ npm install
+## 🛠️ Technologies
+
+- [NestJS](https://nestjs.com/) - A progressive Node.js framework
+- [TypeORM](https://typeorm.io/) - ORM for TypeScript and JavaScript
+- [PostgreSQL](https://www.postgresql.org/) - Relational database
+- [Redis](https://redis.io/) - In-memory data structure store (for queue management)
+- [Firebase](https://firebase.google.com/) - Authentication
+- [BullMQ](https://docs.bullmq.io/) - Queue management
+- [Jest](https://jestjs.io/) - Testing framework
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (latest LTS version recommended)
+- PostgreSQL database
+- Redis server (for queue management)
+- Firebase account (for authentication)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/pushserbia-api.git
+   cd pushserbia-api
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Environment Configuration
+
+Create a `.env` file in the root directory with the following variables:
+
+```
+# Database
+DATABASE_URL=postgres://username:password@localhost:5432/pushserbia
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_USERNAME=default
+REDIS_PASSWORD=your_password
+REDIS_URL=redis://default:your_password@localhost:6379
+
+# Firebase
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_PRIVATE_KEY=your_private_key
+FIREBASE_CLIENT_EMAIL=your_client_email
+FIREBASE_API_KEY=your_api_key
+
+# Auth
+AUTH_CALLBACK_URLS=http://localhost:4200,https://pushserbia.com
+AUTH_PRODUCTION_LOGIN_PAGE=https://pushserbia.com/auth
+AUTH_LOGIN_PAGE_URL=auth
+AUTH_ACCOUNT_PAGE_URL=auth/redirect/linkedin
+
+# LinkedIn OAuth
+LINKEDIN_REDIRECT_URI=http://localhost:3000/v1/auth/redirect/linkedin?callback=
+LINKEDIN_CLIENT_ID=your_client_id
+LINKEDIN_CLIENT_SECRET=your_client_secret
+
+# Mailchimp (optional)
+MAILCHIMP_ENABLE=true
+MAILCHIMP_TOKEN=your_mailchimp_token
+MAILCHIMP_LIMIT=2000
 ```
 
-## Compile and run the project
+## 📝 Usage
 
-```bash
-# development
-$ npm run start
+### Running the Application
 
-# watch mode
-$ npm run start:dev
+- Development mode:
+  ```bash
+  npm run start:dev
+  ```
 
-# production mode
-$ npm run start:prod
+- Debug mode:
+  ```bash
+  npm run start:debug
+  ```
+
+- Production mode:
+  ```bash
+  npm run start:prod
+  ```
+
+### API Endpoints
+
+The API follows RESTful principles with all endpoints prefixed with `/v1`.
+
+Main resources:
+- `/v1/users` - User management
+- `/v1/projects` - Project management
+- `/v1/votes` - Voting system
+- `/v1/auth` - Authentication endpoints
+
+For detailed API documentation, please refer to the API documentation (coming soon).
+
+## 🧪 Testing
+
+### Running Tests
+
+- Run all tests:
+  ```bash
+  npm test
+  ```
+
+- Run tests in watch mode:
+  ```bash
+  npm run test:watch
+  ```
+
+- Run tests with coverage:
+  ```bash
+  npm run test:cov
+  ```
+
+- Run E2E tests:
+  ```bash
+  npm run test:e2e
+  ```
+
+- Run specific test file:
+  ```bash
+  npm test -- path/to/test.spec.ts
+  ```
+
+### Creating New Tests
+
+#### Unit Tests
+
+Unit tests are located alongside the files they test with a `.spec.ts` extension. For example:
+
+```typescript
+// users.service.spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { UsersService } from './users.service';
+import { UserRepositoryService } from './user.repository';
+
+describe('UsersService', () => {
+  let service: UsersService;
+
+  // Mock dependencies
+  const mockUserRepository = {
+    findOneBy: jest.fn(),
+    // Add other methods as needed
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UsersService,
+        {
+          provide: UserRepositoryService,
+          useValue: mockUserRepository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<UsersService>(UsersService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  // Add more test cases
+});
 ```
 
-## Run tests
+#### E2E Tests
 
-```bash
-# unit tests
-$ npm run test
+E2E tests are located in the `test` directory with a `.e2e-spec.ts` extension.
 
-# e2e tests
-$ npm run test:e2e
+## 📁 Project Structure
 
-# test coverage
-$ npm run test:cov
-```
+- `src/`: Source code
+  - `core/`: Core functionality (filters, config, repository base class)
+  - `modules/`: Feature modules (users, projects, votes, auth)
+  - `integrations/`: External service integrations (Mailchimp)
+- `test/`: E2E tests
+- `dist/`: Compiled output
 
-## Deployment
+## 👥 Contributing
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+We welcome contributions to the PushSerbia API project! Here's how you can contribute:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. **Fork the repository**
+2. **Create a feature branch**:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Make your changes**
+4. **Run tests to ensure everything works**:
+   ```bash
+   npm test
+   ```
+5. **Commit your changes**:
+   ```bash
+   git commit -m "Add some feature"
+   ```
+6. **Push to your branch**:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+7. **Create a Pull Request**
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+### Contribution Guidelines
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- Follow the existing code style and formatting (ESLint and Prettier are configured)
+- Write tests for new features or bug fixes
+- Update documentation as needed
+- Keep pull requests focused on a single feature or bug fix
+- Be respectful and constructive in discussions
 
-## Resources
+## 📄 License
 
-Check out a few resources that may come in handy when working with NestJS:
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 📞 Contact
 
-## Support
+For questions or support, please open an issue on GitHub or contact the maintainers.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Made with ❤️ by the PushSerbia team

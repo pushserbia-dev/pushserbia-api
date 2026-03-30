@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { LinkedinUser } from '../models/linkedin-user';
 import { LinkedinAccessTokenParams } from '../models/linkedin-access-token-params';
 import { LinkedinAccessTokenResponse } from '../models/linkedin-access-token-response';
@@ -7,6 +7,7 @@ import { LinkedinConfig } from '../../../core/config/linkedin.config';
 
 @Injectable()
 export class LinkedinAuthService {
+  private readonly logger = new Logger(LinkedinAuthService.name);
   private config: LinkedinConfig;
 
   constructor(private configService: ConfigService) {}
@@ -39,22 +40,28 @@ export class LinkedinAuthService {
     callback: string,
   ): Promise<LinkedinAccessTokenResponse> {
     try {
-      const params = this.getTokenParams(code, callback).toString();
+      const body = this.getTokenParams(code, callback).toString();
       const req = await fetch(
-        `https://www.linkedin.com/oauth/v2/accessToken?${params}`,
+        'https://www.linkedin.com/oauth/v2/accessToken',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
+          body,
+          signal: AbortSignal.timeout(10_000),
         },
       );
       if (!req.ok) {
+        this.logger.warn(`LinkedIn token exchange failed with status ${req.status}`);
         throw new UnauthorizedException('Something went wrong');
       }
 
       return (await req.json()) as LinkedinAccessTokenResponse;
     } catch (error) {
+      if (!(error instanceof UnauthorizedException)) {
+        this.logger.error('LinkedIn token exchange error', error);
+      }
       throw new UnauthorizedException('Something went wrong');
     }
   }
@@ -65,6 +72,7 @@ export class LinkedinAuthService {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
+        signal: AbortSignal.timeout(10_000),
       });
 
       if (response.ok) {
@@ -73,6 +81,9 @@ export class LinkedinAuthService {
 
       throw new UnauthorizedException('Something went wrong');
     } catch (error) {
+      if (!(error instanceof UnauthorizedException)) {
+        this.logger.error('LinkedIn user info fetch error', error);
+      }
       throw new UnauthorizedException('Something went wrong');
     }
   }

@@ -1,20 +1,25 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { MailchimpController } from './mailchimp.controller';
 import { MailchimpService } from './mailchimp.service';
 
 describe('MailchimpController', () => {
   let controller: MailchimpController;
+  let service: jest.Mocked<MailchimpService>;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [MailchimpController],
-      providers: [MailchimpService],
-    }).compile();
-
-    controller = module.get<MailchimpController>(MailchimpController);
+  beforeEach(() => {
+    service = {
+      subscribe: jest.fn(),
+    } as any;
+    controller = new MailchimpController(service);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  describe('subscribe', () => {
+    it('should call service.subscribe with the dto', async () => {
+      const dto = { email: 'test@test.com', tags: 'newsletter' as any };
+      service.subscribe.mockResolvedValue(undefined);
+
+      await controller.subscribe(dto as any);
+
+      expect(service.subscribe).toHaveBeenCalledWith(dto);
+    });
   });
 });

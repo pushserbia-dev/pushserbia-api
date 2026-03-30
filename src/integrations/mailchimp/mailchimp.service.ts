@@ -1,6 +1,6 @@
 import { SubscribeMailchimpDto } from './dto/subscribe-mailchimp.dto';
 import { ConfigService } from '@nestjs/config';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { MailchimpConfig } from '../../core/config/mailchimp.config';
 import Mailchimp from 'mailchimp-api-v3';
 
@@ -17,6 +17,7 @@ interface MailchimpBody {
 
 @Injectable()
 export class MailchimpService {
+  private readonly logger = new Logger(MailchimpService.name);
   private config: MailchimpConfig;
   private mailchimp: Mailchimp;
 
@@ -28,12 +29,12 @@ export class MailchimpService {
     }
     const config = this.configService.get<MailchimpConfig>('mailchimp');
     if (!config?.enabled) {
-      console.error('Mailchimp: Service is disabled.');
-      throw new HttpException('Service is disabled', HttpStatus.BAD_REQUEST);
+      this.logger.error('Mailchimp service is disabled — set MAILCHIMP_ENABLE=true');
+      throw new HttpException('Newsletter service is currently unavailable', HttpStatus.SERVICE_UNAVAILABLE);
     }
     if (!config.token) {
-      console.error('Mailchimp: Token is not defined.');
-      throw new HttpException('Service is disabled', HttpStatus.BAD_REQUEST);
+      this.logger.error('Mailchimp token is not defined — set MAILCHIMP_TOKEN');
+      throw new HttpException('Newsletter service is currently unavailable', HttpStatus.SERVICE_UNAVAILABLE);
     }
     this.config = config;
     return this.config;
@@ -44,9 +45,7 @@ export class MailchimpService {
       return this.mailchimp;
     }
 
-    const mailchimpRef = require('mailchimp-api-v3');
-
-    this.mailchimp = new mailchimpRef(this.getConfig().token) as Mailchimp;
+    this.mailchimp = new Mailchimp(this.getConfig().token);
 
     return this.mailchimp;
   }
@@ -58,13 +57,11 @@ export class MailchimpService {
     });
     const { lists, total_items, statusCode } = fetchResponse;
     if (!total_items) {
-      console.error('Mailchimp: There is no defined mailing list.');
+      this.logger.error('There is no defined mailing list');
       throw new HttpException('Service is disabled', HttpStatus.BAD_REQUEST);
     }
     if (statusCode !== 200) {
-      console.error(
-        'Mailchimp: Something went wrong during the fetching mailing lists.',
-      );
+      this.logger.error('Something went wrong during fetching mailing lists');
       throw new HttpException('Service is disabled', HttpStatus.BAD_REQUEST);
     }
 
@@ -72,8 +69,7 @@ export class MailchimpService {
       (list: any) => list.stats.member_count < this.getConfig().limit,
     );
     if (!activeList) {
-      console.warn('Mailchimp: Every mailing list is full.');
-      // todo: think about creating the new list or increase budget plan
+      this.logger.warn('Every mailing list is full');
       activeList = lists[lists.length - 1];
     }
 
@@ -104,12 +100,8 @@ export class MailchimpService {
 
       return;
     } catch (e) {
-      console.error(
-        'Mailchimp: Something went wrong during the creating subscriber.',
-      );
-      console.log(e);
+      this.logger.error('Something went wrong during creating subscriber');
       if (e.statusCode === 400 && e.title === 'Member Exists') {
-        // silently ignore when member already exists
         return;
       }
       throw new HttpException('Something is wrong.', HttpStatus.BAD_REQUEST);

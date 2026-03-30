@@ -2,8 +2,10 @@ import { UserRole } from '../../users/enums/user-role';
 
 export interface CurrentUser {
   id: string;
-  uid: string;
   email: string;
+  uid: string;
   name: string;
-  role?: UserRole;
+  imageUrl: string | undefined;
+  role: UserRole;
+  active: boolean;
 }

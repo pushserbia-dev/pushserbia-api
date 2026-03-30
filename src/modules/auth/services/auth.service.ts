@@ -58,7 +58,7 @@ export class AuthService {
 
     return {
       status: HttpStatus.FOUND,
-      url: `${callback}/${this.getConfig().accountPage}?customToken=${firebaseToken}`,
+      url: `${callback}/${this.getConfig().accountPage}?customToken=${encodeURIComponent(firebaseToken)}`,
     };
   }
 }

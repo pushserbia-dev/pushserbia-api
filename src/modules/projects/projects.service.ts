@@ -1,77 +1,105 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { Injectable } from '@nestjs/common';
 import { Project } from './entities/project.entity';
-import { User } from '../users/entities/user.entity';
-import { ProjectStatus } from './enums/project-status.enum';
-import { v4 as uuidv4 } from 'uuid';
-import { ProjectRepositoryService } from './projects.repository';
+import { DEFAULT_PAGE_SIZE } from '../../core/constants/constants';
+import { RepositoryService } from '../../core/repository/repository.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 
 @Injectable()
-export class ProjectsService {
+export class ProjectsService extends RepositoryService<Project> {
   constructor(
-    private readonly projectRepositoryService: ProjectRepositoryService,
-  ) {}
-
-  async create(
-    createProjectDto: CreateProjectDto,
-    creator: User,
-  ): Promise<Project> {
-    const newProjectData = {
-      ...createProjectDto,
-      creator,
-      status: ProjectStatus.PENDING,
-      shareableLink: uuidv4(), //random za sada
-    };
-    try {
-      return await this.projectRepositoryService.create(newProjectData);
-    } catch (error) {
-      throw new ConflictException('Error creating project: ' + error.message);
-    }
+    @InjectRepository(Project)
+    protected readonly repository: Repository<Project>,
+  ) {
+    super();
   }
 
-  async findAll(options?: Partial<Project>): Promise<Project[]> {
-    return this.projectRepositoryService.findAll({
-      where: { ...options, isBanned: false },
-      relations: ['creator'],
+  async findAll(options?: FindManyOptions<Project>): Promise<Project[]> {
+    return this.repository.find({
+      where: { ...(options?.where as Partial<Project>), isBanned: false },
+      order: { createdAt: 'DESC' },
+      relations: { creator: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        shortDescription: true,
+        totalVotes: true,
+        totalVoters: true,
+        image: true,
+        createdAt: true,
+        creator: {
+          id: true,
+          fullName: true,
+          imageUrl: true,
+        },
+      },
     });
   }
 
-  async findOne(id: number): Promise<Project> {
-    const project = await this.projectRepositoryService.findOne(id);
-    if (!project) {
-      throw new NotFoundException(`Project with id ${id} not found`);
-    }
-    return project;
+  async findAllOffset(
+    options?: FindManyOptions<Project>,
+    limit: number = DEFAULT_PAGE_SIZE,
+    offset: number = 0,
+  ): Promise<{
+    data: Project[];
+    total: number;
+    limit: number;
+    offset: number;
+    currentPage: number;
+    totalPages: number;
+  }> {
+    return super.findAllOffset(
+      {
+        where: { ...(options?.where as Partial<Project>), isBanned: false },
+        order: { createdAt: 'DESC' },
+        relations: { creator: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          shortDescription: true,
+          description: true,
+          totalVotes: true,
+          totalVoters: true,
+          image: true,
+          createdAt: true,
+          status: true,
+          creator: {
+            id: true,
+            fullName: true,
+            imageUrl: true,
+          },
+        },
+      },
+      limit,
+      offset,
+    );
   }
 
-  async update(
-    id: number,
-    updateProjectDto: UpdateProjectDto,
-  ): Promise<Project> {
-    const project = await this.findOne(id);
-    if (project.isBanned) {
-      throw new ConflictException('Cannot update a banned project');
-    }
-    return this.projectRepositoryService.update(id, updateProjectDto);
-  }
-
-  async banProject(id: number, banNote: string): Promise<Project> {
-    const project = await this.findOne(id);
-    if (project.isBanned) {
-      throw new ConflictException('Project is already banned');
-    }
-    return this.projectRepositoryService.update(id, {
-      isBanned: true,
-      banNote,
+  findById(id: string) {
+    return this.repository.findOne({
+      where: { id, isBanned: false },
+      relations: { creator: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        shortDescription: true,
+        description: true,
+        status: true,
+        totalVotes: true,
+        totalVoters: true,
+        github: true,
+        image: true,
+        createdAt: true,
+        updatedAt: true,
+        creator: {
+          id: true,
+          fullName: true,
+          imageUrl: true,
+        },
+      },
     });
-  }
-
-  async remove(id: number): Promise<void> {
-    await this.projectRepositoryService.remove(id);
   }
 }

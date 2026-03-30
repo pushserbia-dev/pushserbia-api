@@ -1,73 +1,82 @@
-import {
-  DeepPartial,
-  FindOptionsWhere,
-  InsertResult,
-  Repository,
-} from 'typeorm';
-import { BadRequestException } from '@nestjs/common';
+import { DeepPartial, FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
+import { DEFAULT_PAGE_SIZE } from '../constants/constants';
 
-export abstract class RepositoryService<T extends { id: string | number }> {
-  protected abstract get repository(): Repository<T>;
+export abstract class RepositoryService<T extends { id: string }> {
+  protected abstract repository: Repository<T>;
 
   async create(entity: DeepPartial<T>): Promise<T> {
-    return this.repository.save(entity).catch((error) => {
-      if (error.code === '23505') {
-        throw new BadRequestException({ message: [error.detail] });
-      }
-      throw error;
-    });
+    return this.repository.save(entity);
   }
 
-  async createMany(
-    entities: QueryDeepPartialEntity<T>[],
-  ): Promise<InsertResult> {
-    return this.repository.insert(entities);
-  }
-
-  async findAll(options?: any): Promise<T[]> {
+  async findAll(options?: FindManyOptions<T>): Promise<T[]> {
     return this.repository.find(options);
   }
 
-  async findOne(id: string | number): Promise<T> {
-    const entity = await this.repository.findOneBy({
-      id,
-    } as FindOptionsWhere<T>);
-    if (!entity) {
-      throw new BadRequestException(`Entity with id ${id} not found`);
+  async findAllOffset(
+    options?: FindManyOptions<T>,
+    limit: number = DEFAULT_PAGE_SIZE,
+    offset: number = 0,
+  ): Promise<{
+    data: T[];
+    total: number;
+    limit: number;
+    offset: number;
+    currentPage: number;
+    totalPages: number;
+  }> {
+    if (limit < 1) {
+      throw new BadRequestException('Limit must be at least 1');
     }
-    return entity;
+    if (offset < 0) {
+      throw new BadRequestException('Offset must be non-negative');
+    }
+
+    const [data, total] = await this.repository.findAndCount({
+      ...options,
+      take: limit,
+      skip: offset,
+    });
+
+    const totalPages = total > 0 ? Math.ceil(total / limit) : 0;
+    const currentPage = total > 0 ? Math.floor(offset / limit) + 1 : 0;
+
+    return {
+      data,
+      total,
+      limit,
+      offset,
+      currentPage,
+      totalPages,
+    };
   }
 
-  async findOneBy(query: Partial<T>): Promise<T | null> {
-    return this.repository.findOneBy(query as FindOptionsWhere<T>);
+  findById(id: string) {
+    return this.repository.findOneBy({ id } as FindOptionsWhere<T>);
+  }
+
+  findOneBy(query: FindOptionsWhere<T> | FindOptionsWhere<T>[]) {
+    return this.repository.findOneBy(query);
   }
 
   async update(
-    criteria: string | number | Partial<T>,
+    criteria: string | FindOptionsWhere<T>,
     entity: QueryDeepPartialEntity<T>,
-  ): Promise<T> {
-    await this.repository.update(
-      criteria as string | number | FindOptionsWhere<T>,
-      entity,
-    );
-    return typeof criteria === 'string' || typeof criteria === 'number'
-      ? this.findOne(criteria)
-      : this.repository
-          .findOneBy(criteria as FindOptionsWhere<T>)
-          .then((result) => {
-            if (!result) {
-              throw new BadRequestException(`Entity not found`);
-            }
-            return result;
-          });
+  ) {
+    const updated = await this.repository.update(criteria, entity);
+    if (updated.affected === 0) {
+      throw new HttpException('Entity not found', HttpStatus.NOT_FOUND);
+    }
+    return typeof criteria === 'string'
+      ? this.findById(criteria)
+      : this.findOneBy(criteria);
   }
 
-  async remove(criteria: string | number | Partial<T>): Promise<void> {
-    if (typeof criteria === 'string' || typeof criteria === 'number') {
-      await this.repository.delete(criteria);
-    } else {
-      await this.repository.delete(criteria as FindOptionsWhere<T>);
+  async remove(criteria: string | FindOptionsWhere<T>): Promise<void> {
+    const result = await this.repository.delete(criteria);
+    if (result.affected === 0) {
+      throw new HttpException('Entity not found', HttpStatus.NOT_FOUND);
     }
   }
 }
