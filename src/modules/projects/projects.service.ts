@@ -68,7 +68,7 @@ export class ProjectsService extends RepositoryService<Project> {
           creator: {
             id: true,
             fullName: true,
-            gravatar: true,
+            imageUrl: true,
           },
         },
       },

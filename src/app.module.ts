@@ -13,6 +13,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { VotesModule } from './modules/votes/votes.module';
+import { ProjectMembersModule } from './modules/project-members/project-members.module';
 import { AuthModule } from './modules/auth/auth.module';
 import linkedinConfig from './core/config/linkedin.config';
 import firebaseConfig from './core/config/firebase.config';
@@ -20,6 +21,17 @@ import { AuthMiddleware } from './modules/auth/middlewares/auth.middleware';
 import { ValidTokenOnlyMiddleware } from './modules/auth/middlewares/valid-token-only/valid-token-only.middleware';
 import authConfig from './core/config/auth.config';
 import { UnsplashModule } from './modules/unsplash/unsplash.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
+
+const typeormSynchronize = process.env.TYPEORM_SYNCHRONIZE === 'true';
+const typeormMigrationsRun = process.env.TYPEORM_MIGRATIONS_RUN === 'true';
+
+if (typeormSynchronize && typeormMigrationsRun) {
+  throw new Error(
+    'TYPEORM_SYNCHRONIZE and TYPEORM_MIGRATIONS_RUN cannot both be true. ' +
+      'Use synchronize for development, migrationsRun for production.',
+  );
+}
 
 @Module({
   imports: [
@@ -38,14 +50,18 @@ import { UnsplashModule } from './modules/unsplash/unsplash.module';
             }
           : false,
       autoLoadEntities: true,
-      synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true',
+      synchronize: typeormSynchronize,
+      migrationsRun: typeormMigrationsRun,
+      migrations: ['dist/database/migrations/*{.ts,.js}'],
     }),
     MailchimpModule,
     AuthModule,
     UsersModule,
     ProjectsModule,
     VotesModule,
+    ProjectMembersModule,
     UnsplashModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -66,6 +82,7 @@ export class AppModule implements NestModule {
         { path: '/auth/redirect/linkedin', method: RequestMethod.GET },
         { path: '/projects', method: RequestMethod.GET },
         { path: '/projects/(.*)', method: RequestMethod.GET },
+        { path: '/projects/:projectId/members', method: RequestMethod.GET },
         ...customRoutes,
       )
       .forRoutes('*');

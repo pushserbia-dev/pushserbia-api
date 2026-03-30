@@ -29,12 +29,12 @@ export class MailchimpService {
     }
     const config = this.configService.get<MailchimpConfig>('mailchimp');
     if (!config?.enabled) {
-      this.logger.error('Service is disabled');
-      throw new HttpException('Service is disabled', HttpStatus.BAD_REQUEST);
+      this.logger.error('Mailchimp service is disabled — set MAILCHIMP_ENABLE=true');
+      throw new HttpException('Newsletter service is currently unavailable', HttpStatus.SERVICE_UNAVAILABLE);
     }
     if (!config.token) {
-      this.logger.error('Token is not defined');
-      throw new HttpException('Service is disabled', HttpStatus.BAD_REQUEST);
+      this.logger.error('Mailchimp token is not defined — set MAILCHIMP_TOKEN');
+      throw new HttpException('Newsletter service is currently unavailable', HttpStatus.SERVICE_UNAVAILABLE);
     }
     this.config = config;
     return this.config;

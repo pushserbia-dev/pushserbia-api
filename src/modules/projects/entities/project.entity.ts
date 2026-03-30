@@ -5,11 +5,13 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { ProjectStatus } from '../enums/project-status.enum';
 import { User } from '../../users/entities/user.entity';
+import { ProjectMember } from '../../project-members/entities/project-member.entity';
 
 @Entity()
 export class Project {
@@ -63,6 +65,9 @@ export class Project {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'creatorId' })
   creator: User;
+
+  @OneToMany(() => ProjectMember, (member) => member.project)
+  members: ProjectMember[];
 
   @Index()
   @CreateDateColumn()
